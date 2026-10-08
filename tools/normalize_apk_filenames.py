@@ -5,15 +5,24 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
 
-PACKAGE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]*\Z")
-PACKAGE_VERSION = re.compile(r"[A-Za-z0-9._+~-]+\Z")
+def filename_component(value: Any, label: str) -> str:
+    """Reject path/control characters without imposing package syntax rules."""
+    forbidden = '<>:"/\\|?*'
+    if (
+        not isinstance(value, str)
+        or not value
+        or value in {".", ".."}
+        or any(char in value for char in forbidden)
+        or any(ord(char) < 32 or ord(char) == 127 for char in value)
+    ):
+        raise ValueError(f"invalid APK {label} for filename: {value!r}")
+    return value
 
 
 def package_identity(metadata: dict[str, Any]) -> tuple[str, str]:
@@ -31,11 +40,8 @@ def package_identity(metadata: dict[str, Any]) -> tuple[str, str]:
         raise ValueError(f"APK metadata must describe exactly one package; got {sample}")
     if not isinstance(package, dict):
         raise ValueError("APK metadata package record is not an object")
-    name, version = package.get("name"), package.get("version")
-    if not isinstance(name, str) or not PACKAGE_NAME.fullmatch(name):
-        raise ValueError(f"invalid APK package name: {name!r}")
-    if not isinstance(version, str) or not PACKAGE_VERSION.fullmatch(version):
-        raise ValueError(f"invalid APK package version: {version!r}")
+    name = filename_component(package.get("name"), "package name")
+    version = filename_component(package.get("version"), "package version")
     return name, version
 
 

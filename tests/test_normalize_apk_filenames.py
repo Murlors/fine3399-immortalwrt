@@ -33,9 +33,21 @@ class NormalizeApkFilenamesTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exactly one package"):
             package_identity({"packages": [{"name": "first", "version": "1"}, {"name": "second", "version": "2"}]})
 
+    def test_accepts_unusual_but_filename_safe_identity_characters(self):
+        self.assertEqual(
+            package_identity(
+                {"info": {"name": "custom package+variant", "version": "v2-preview~1+build"}}
+            ),
+            ("custom package+variant", "v2-preview~1+build"),
+        )
+
     def test_rejects_path_separators_in_package_identity(self):
         with self.assertRaisesRegex(ValueError, "invalid APK package name"):
             package_identity({"packages": [{"name": "../escape", "version": "1"}]})
+
+    def test_rejects_control_characters_in_package_identity(self):
+        with self.assertRaisesRegex(ValueError, "invalid APK package version"):
+            package_identity({"info": {"name": "safe-name", "version": "1\n2"}})
 
 
 if __name__ == "__main__":
