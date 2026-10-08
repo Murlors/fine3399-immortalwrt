@@ -23,7 +23,8 @@ def package_identity(metadata: dict[str, Any]) -> tuple[str, str]:
     elif isinstance(packages, list) and len(packages) == 1:
         package = packages[0]
     else:
-        raise ValueError("APK metadata must describe exactly one package")
+        sample = json.dumps(metadata, sort_keys=True)[:1200]
+        raise ValueError(f"APK metadata must describe exactly one package; got {sample}")
     if not isinstance(package, dict):
         raise ValueError("APK metadata package record is not an object")
     name, version = package.get("name"), package.get("version")
