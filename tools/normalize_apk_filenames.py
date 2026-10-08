@@ -18,6 +18,10 @@ PACKAGE_VERSION = re.compile(r"[A-Za-z0-9._+~-]+\Z")
 
 def package_identity(metadata: dict[str, Any]) -> tuple[str, str]:
     packages = metadata.get("packages")
+    if packages is None and isinstance(metadata.get("info"), dict):
+        # `apk adbdump` reports one APK as an object containing its package
+        # record under `info`, alongside file/path metadata.
+        packages = [metadata["info"]]
     if packages is None and "name" in metadata and "version" in metadata:
         package = metadata
     elif isinstance(packages, list) and len(packages) == 1:

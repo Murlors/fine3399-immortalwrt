@@ -18,6 +18,17 @@ class NormalizeApkFilenamesTests(unittest.TestCase):
             ("luci-theme-argon", "2.4.8-r1"),
         )
 
+    def test_reads_package_identity_from_adbdump_info(self):
+        self.assertEqual(
+            package_identity(
+                {
+                    "info": {"name": "luci-theme-argon", "version": "2.4.8-r1"},
+                    "paths": [{"name": "usr/share/luci"}],
+                }
+            ),
+            ("luci-theme-argon", "2.4.8-r1"),
+        )
+
     def test_rejects_multiple_package_records(self):
         with self.assertRaisesRegex(ValueError, "exactly one package"):
             package_identity({"packages": [{"name": "first", "version": "1"}, {"name": "second", "version": "2"}]})
