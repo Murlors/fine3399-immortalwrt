@@ -18,9 +18,12 @@ PACKAGE_VERSION = re.compile(r"[A-Za-z0-9._+~-]+\Z")
 
 def package_identity(metadata: dict[str, Any]) -> tuple[str, str]:
     packages = metadata.get("packages")
-    if not isinstance(packages, list) or len(packages) != 1:
-        raise ValueError("APK metadata must contain exactly one package")
-    package = packages[0]
+    if packages is None and "name" in metadata and "version" in metadata:
+        package = metadata
+    elif isinstance(packages, list) and len(packages) == 1:
+        package = packages[0]
+    else:
+        raise ValueError("APK metadata must describe exactly one package")
     if not isinstance(package, dict):
         raise ValueError("APK metadata package record is not an object")
     name, version = package.get("name"), package.get("version")
