@@ -16,8 +16,10 @@ NAS、容器和状态屏所需组件，首次启动无需在线安装软件包�
 | 管理 | 中文 LuCI、Argon、SSH、常用诊断工具 |
 | 硬件 | 双网口、BCM43362 Wi-Fi、Rockchip HDMI/DRM、0.96 寸 ST7735S 160×80 SPI 屏 |
 
-未配置的 OpenClash、DDNS-Go、FRPS、UPnP、Docker 和 adblock-fast 默认不启动。仓库不保存
-PPPoE 账号、域名、API Token、FRP 密钥或其他设备配置。
+OpenClash 保持关闭，但预置当前验证过的 redir-host、IPv6、DNS 接管和绕过策略；
+只有手动配置代理后才启用。adblock-fast 默认启用 1Hosts Lite，且不拒绝客户端自选 DNS/DoT；
+DDNS-Go、FRPS、UPnP、Docker 等需要设备配置或凭据的服务默认不启动。仓库不保存 PPPoE
+账号、域名、API Token、FRP 密钥、代理订阅或其他设备配置。
 
 LCD 由原生 C 守护进程驱动，启动时先播放 6 秒遥像素动画，然后轮播网络、系统和
 服务状态。服务页显示 OpenClash、DDNS-Go、FRPS 与 Docker 容器汇总，
@@ -38,8 +40,8 @@ python3 tools/convert_lcd_animation.py animation.gif animation.rgb565
 
 构建链只保留一条受支持路径：
 
-1. ImmortalWrt 25.12.1 ImageBuilder 生成预装 rootfs；
-2. 获取 Argon、OpenClash、官方 Nginx UI Release 和匹配的 ophub 6.12.94 内核；
+1. ImmortalWrt 25.12.2 ImageBuilder 生成预装 rootfs；
+2. 获取 Argon、OpenClash、官方 Nginx UI Release 和 ophub 6.12.112 内核包；
 3. 编译启用 ST7735S 的 Fine3399 DTB；
 4. 使用锁定的 ophub 打包器生成整盘镜像；
 5. 验证软件包、覆盖文件、内核模块、DTB、校验和及压缩镜像。
@@ -50,8 +52,10 @@ python3 tools/convert_lcd_animation.py animation.gif animation.rgb565
 ## 下载与构建
 
 在仓库的 [Actions 页面](https://github.com/Murlors/fine3399-immortalwrt/actions/workflows/build-fine3399.yml)
-选择 **Run workflow**。内核版本留空时使用与 ImmortalWrt 25.12.1 ImageBuilder 匹配的
-ophub 6.12.94；高级测试也可以手动指定同系列的准确版本。
+选择 **Run workflow**。内核版本留空时使用当前仍可获取的 ophub 6.12.112；构建会清除
+ImageBuilder 自带模块并替换为该内核的完整模块包。ImmortalWrt 25.12.2 的 armsr 包仍按
+6.12.103 编译，因此不要从标准源单独升级 `kmod-*` 或内核包。升级后的镜像需先从可移除介质验收。
+高级测试也可以手动指定同系列的准确版本。
 
 手动构建完成后下载名为 `fine3399-immortalwrt-<版本>-<内核>` 的 artifact，其中包括：
 
@@ -80,8 +84,8 @@ make image
 ## 首次启动
 
 1. 先从可移除介质启动，不要直接覆盖当前可用的 eMMC；
-2. 通过 `192.168.1.1` 登录 LuCI，确认两个网口和 MAC；
-3. 设置 WAN 的 PPPoE 账号，并检查 IPv4、IPv6、DNS 和千兆链路；
+2. 固件默认将板载 `eth0` 设为 WAN 口、USB RTL8152 `eth1` 设为 LAN bridge；先确认接线和网口 MAC；
+3. 通过 `192.168.1.1` 登录 LuCI，将 WAN 协议设为 PPPoE 并填写账号，再检查 IPv4、IPv6、DNS 和千兆链路；
 4. 按需配置 OpenClash、DDNS-Go、FRPS、Nginx UI、Samba、Docker 等服务；
 5. 完成 [硬件验收](docs/hardware-smoke-test.md) 并备份配置后，再写入 eMMC。
 

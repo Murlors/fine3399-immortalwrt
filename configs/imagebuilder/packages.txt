@@ -83,9 +83,15 @@ dockerd
 docker-compose
 luci-app-dockerman
 
-# Optional services, preinstalled but disabled until configured
+# DNS filtering is enabled with a non-blocking client DNS policy
 adblock-fast
 luci-app-adblock-fast
+gawk
+grep
+sed
+coreutils-sort
+
+# Optional services, preinstalled but disabled until configured
 sqm-scripts
 luci-app-sqm
 nlbwmon

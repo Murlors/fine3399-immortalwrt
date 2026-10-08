@@ -5,7 +5,7 @@ from tools.resolve_releases import ResolutionError, resolve
 
 
 CONFIG = {
-    "immortalwrt": {"version": "25.12.1"},
+    "immortalwrt": {"version": "25.12.2"},
     "rolling": {
         "argon_repository": "theme/repo",
         "openclash_repository": "clash/repo",

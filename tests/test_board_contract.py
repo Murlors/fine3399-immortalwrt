@@ -129,6 +129,84 @@ class BoardContractTests(unittest.TestCase):
         self.assertIn("dockerd.globals.registry_mirrors", baseline)
         self.assertIn("https://docker.1panel.live", baseline)
 
+    def test_adblock_fast_defaults_are_complete_and_do_not_reject_client_dns(self):
+        baseline = (
+            REPOSITORY_ROOT
+            / "files"
+            / "etc"
+            / "uci-defaults"
+            / "90-fine3399-baseline"
+        ).read_text(encoding="utf-8")
+        packages = (
+            REPOSITORY_ROOT / "configs" / "imagebuilder" / "packages.txt"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("1Hosts - Lite", baseline)
+        self.assertIn("adblock-fast.config.force_dns='0'", baseline)
+        self.assertIn("adblock-fast.config.enabled='1'", baseline)
+        for package in ("gawk", "grep", "sed", "coreutils-sort"):
+            with self.subTest(package=package):
+                self.assertRegex(packages, rf"(?m)^{package}$")
+        self.assertNotRegex(
+            baseline,
+            r"for service in[^\n]*\badblock-fast\b",
+        )
+
+    def test_openclash_policy_is_preserved_but_service_stays_off(self):
+        baseline = (
+            REPOSITORY_ROOT
+            / "files"
+            / "etc"
+            / "uci-defaults"
+            / "90-fine3399-baseline"
+        ).read_text(encoding="utf-8")
+
+        for setting in (
+            "enable='0'",
+            "en_mode='redir-host'",
+            "ipv6_enable='1'",
+            "enable_redirect_dns='2'",
+            "router_self_proxy='1'",
+            "china_ip_route='1'",
+            "skip_proxy_address='1'",
+        ):
+            with self.subTest(setting=setting):
+                self.assertIn(f"set openclash.config.{setting}", baseline)
+        self.assertRegex(baseline, r"for service in[^\n]*\bopenclash\b")
+
+    def test_firmware_defaults_match_tested_lan_wan_mapping(self):
+        baseline = (
+            REPOSITORY_ROOT
+            / "files"
+            / "etc"
+            / "uci-defaults"
+            / "90-fine3399-baseline"
+        ).read_text(encoding="utf-8")
+
+        for setting in (
+            "network.lan.device='br-lan'",
+            "network.wan.device='eth0'",
+            "network.wan6.device='eth0'",
+        ):
+            with self.subTest(setting=setting):
+                self.assertIn(f"uci -q set {setting}", baseline)
+        self.assertIn("ports=eth1", baseline)
+
+    def test_release_baseline_uses_current_supported_inputs(self):
+        import json
+
+        config = json.loads(
+            (REPOSITORY_ROOT / "configs" / "releases.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(config["immortalwrt"]["version"], "25.12.2")
+        self.assertEqual(config["immortalwrt"]["target"], "armsr/armv8")
+        self.assertEqual(config["rolling"]["kernel_version"], "6.12.112")
+        for key in ("imagebuilder_url", "toolchain_url"):
+            with self.subTest(key=key):
+                self.assertIn("/25.12.2/targets/armsr/armv8/", config["immortalwrt"][key])
+
     def test_lcd_service_selects_st7735_instead_of_hdmi_framebuffer(self):
         init_script = LCD_INIT_PATH.read_text(encoding="utf-8")
         program = LCD_PROGRAM_PATH.read_text(encoding="utf-8")

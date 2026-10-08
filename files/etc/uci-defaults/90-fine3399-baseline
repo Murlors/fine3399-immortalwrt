@@ -8,6 +8,27 @@ set system.@system[0].timezone='CST-8'
 commit system
 EOF
 
+# Match the tested live port assignment: the onboard GMAC is PPPoE WAN and
+# the USB RTL8152 adapter is the LAN bridge port. Do not copy credentials.
+lan_bridge_section=
+for section in $(uci -q show network | sed -n "s/^network\.\([^.=]*\)=device$/\1/p"); do
+	if [ "$(uci -q get "network.${section}.name")" = 'br-lan' ]; then
+		lan_bridge_section=$section
+		break
+	fi
+done
+if [ -z "$lan_bridge_section" ]; then
+	lan_bridge_section=$(uci add network device)
+	uci -q set "network.${lan_bridge_section}.name=br-lan"
+	uci -q set "network.${lan_bridge_section}.type=bridge"
+fi
+uci -q delete "network.${lan_bridge_section}.ports" || true
+uci -q add_list "network.${lan_bridge_section}.ports=eth1"
+uci -q set network.lan.device='br-lan'
+uci -q set network.wan.device='eth0'
+uci -q set network.wan6.device='eth0'
+uci -q commit network
+
 # The BCM43362 SDIO device is enumerated before the ImageBuilder rootfs
 # finishes loading its ophub module bundle. AutoProbe therefore misses the
 # original hotplug event, so load it explicitly before generating Wi-Fi UCI.
@@ -40,9 +61,48 @@ if [ -x /etc/init.d/fine3399-wifi ]; then
 fi
 
 # Services needing credentials or policy stay off until configured in LuCI.
-for service in openclash frps ddns-go adblock-fast sqm dockerd samba4 wsdd2 miniupnpd; do
+for service in openclash frps ddns-go sqm dockerd samba4 wsdd2 miniupnpd; do
 	[ -x "/etc/init.d/${service}" ] && "/etc/init.d/${service}" disable || true
 done
+
+# Preserve the current OpenClash policy without enabling traffic interception.
+# The service stays disabled until a proxy profile is configured deliberately.
+if uci -q show openclash.config >/dev/null 2>&1; then
+	uci -q batch <<'EOF'
+set openclash.config.enable='0'
+set openclash.config.en_mode='redir-host'
+set openclash.config.ipv6_enable='1'
+set openclash.config.enable_redirect_dns='2'
+set openclash.config.router_self_proxy='1'
+set openclash.config.china_ip_route='1'
+set openclash.config.skip_proxy_address='1'
+commit openclash
+EOF
+	[ -x /etc/init.d/openclash ] && /etc/init.d/openclash disable || true
+fi
+
+# Use the working 1Hosts Lite list, but do not reject LAN clients' external
+# DNS/DoT. A failed list download must never make connected devices lose DNS.
+if uci -q show adblock-fast.config >/dev/null 2>&1; then
+	adblock_list_found=0
+	for section in $(uci -q show adblock-fast | sed -n "s/^adblock-fast\\.\\([^.=]*\\)=file_url$/\\1/p"); do
+		if [ "$(uci -q get "adblock-fast.${section}.name")" = '1Hosts - Lite' ]; then
+			uci -q set "adblock-fast.${section}.enabled=1"
+			adblock_list_found=1
+		else
+			uci -q set "adblock-fast.${section}.enabled=0"
+		fi
+	done
+	uci -q set adblock-fast.config.force_dns='0'
+	if [ "$adblock_list_found" -eq 1 ]; then
+		uci -q set adblock-fast.config.enabled='1'
+		[ -x /etc/init.d/adblock-fast ] && /etc/init.d/adblock-fast enable || true
+	else
+		uci -q set adblock-fast.config.enabled='0'
+		[ -x /etc/init.d/adblock-fast ] && /etc/init.d/adblock-fast disable || true
+	fi
+	uci -q commit adblock-fast
+fi
 
 # Docker Hub is frequently unreachable from the target network. Keep this as
 # an ordinary UCI entry so it remains replaceable from Dockerman.

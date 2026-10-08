@@ -48,11 +48,13 @@ EXPECTED_PACKAGES = {
     "avahi-dbus-daemon",
     "avahi-utils",
     "adblock-fast",
+    "gawk",
+    "grep",
+    "sed",
+    "coreutils-sort",
     "nginx-ssl",
     "nginx-mod-stream",
 }
-
-
 class VerificationError(RuntimeError):
     pass
 

@@ -2,9 +2,12 @@
 
 ## 推荐：GitHub Actions
 
-在仓库 Actions 中手动运行 **Build Fine3399 firmware**。内核版本留空会选择
-与 ImmortalWrt 25.12.1 ImageBuilder 匹配的 ophub 6.12.94；也可以为测试输入其他
-精确的 6.12.x 版本。
+在仓库 Actions 中手动运行 **Build Fine3399 firmware**。当前基线为 ImmortalWrt
+25.12.2 与当前可获取的 ophub 6.12.112；也可以为测试输入其他精确的 6.12.x 版本。
+ophub 内核模块会替换 ImageBuilder 的模块目录；升级后的内核/驱动组合必须先经过硬件验收。
+注意：ImmortalWrt 25.12.2 自带的 armsr 内核包版本为 6.12.103，而当前可获取的 ophub
+包为 6.12.112。打包时会移除 ImageBuilder 的 `/lib/modules/*` 并换成 ophub 模块；因此不要
+从标准软件源单独安装/升级 `kmod-*` 或内核包，除非为实际运行的 ophub 内核重新构建并验证。
 
 普通 `main` 提交只运行测试，不生成版本会漂移的大镜像。手动运行和 `v*` 标签
 才执行完整构建，通常只需要下载和重组包、编译单个 DTB，避免数小时源码交叉编译。
@@ -36,7 +39,8 @@ ImageBuilder 和 DTB 阶段拒绝 root；只有 ophub 挂载和封装磁盘镜�
 - 设置主机名、Asia/Shanghai 与无线国家码 CN；
 - 启用 LCD 状态服务；
 - 启用仅绑定 `br-lan` 的 Avahi；Samba 预置 Mac 兼容和 SMB1 旧设备兼容，但不创建共享；
-- 保持 OpenClash、FRPS、DDNS-Go、UPnP、Docker、adblock-fast 等待配置的服务关闭；
+- 保持 OpenClash、FRPS、DDNS-Go、UPnP、Docker 等待配置的服务关闭；OpenClash
+  预置已审核的策略但不启用；adblock-fast 使用 1Hosts Lite 且关闭强制 DNS 拒绝；
 - 为 Dockerd 预置当前网络已实测可用的 `docker.1panel.live` 加速项，可在
   Dockerman 中随时替换或删除；
 - 启动 Nginx UI（9000）和没有默认监听端口的 Nginx，不抢占 LuCI 的 80/443。
@@ -53,7 +57,7 @@ procd 服务运行。LuCI 顶级菜单可直接嵌入或打开管理界面。配
 不存在时服务会拒绝启动，避免误写根分区。基础 Nginx 配置包含 HTTP 与 Stream 管理
 目录，但默认没有任何 `listen`，因此启用站点前不会与 uHTTPd 冲突。
 
-首次登录后在 LuCI 中设置 WAN 的 PPPoE 账号密码，再分别配置服务。FRPC 未预装。
+固件首次启动时默认将板载 `eth0` 设为 WAN 物理口、USB RTL8152 `eth1` 设为 LAN bridge；首次登录后在 LuCI 中将 WAN 协议设为 PPPoE 并填写账号密码，再分别配置服务。若改变网卡接线或更换 USB 网卡，需重新核对 LAN/WAN 映射。FRPC 未预装。
 
 ## 数据分区和 Docker
 

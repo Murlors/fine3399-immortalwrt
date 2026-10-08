@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "immortalwrt": {
-    "version": "25.12.1",
+    "version": "25.12.2",
     "target": "armsr/armv8",
-    "imagebuilder_url": "https://downloads.immortalwrt.org/releases/25.12.1/targets/armsr/armv8/immortalwrt-imagebuilder-25.12.1-armsr-armv8.Linux-x86_64.tar.zst",
-    "imagebuilder_sha256": "0d549382957e9bb12d22f9acd97789cc4cba039d6dab14ed423572c8ce2207a6",
-    "toolchain_url": "https://downloads.immortalwrt.org/releases/25.12.1/targets/armsr/armv8/immortalwrt-toolchain-25.12.1-armsr-armv8_gcc-14.3.0_musl.Linux-x86_64.tar.zst",
-    "toolchain_sha256": "ba935823e6bae871aa87addfefa882383a52a60fa786da09cf737246a9d79f33"
+    "imagebuilder_url": "https://downloads.immortalwrt.org/releases/25.12.2/targets/armsr/armv8/immortalwrt-imagebuilder-25.12.2-armsr-armv8.Linux-x86_64.tar.zst",
+    "imagebuilder_sha256": "a8c1ffda15e7d79854ff4afd711da3e7224e84945c79f03d80fc6cf48727cb9c",
+    "toolchain_url": "https://downloads.immortalwrt.org/releases/25.12.2/targets/armsr/armv8/immortalwrt-toolchain-25.12.2-armsr-armv8_gcc-14.3.0_musl.Linux-x86_64.tar.zst",
+    "toolchain_sha256": "b7ca676b1aa2877d4bf87097db45ebcbb333e0d19ac9eeb94552ea6f49aa5470"
   },
   "rolling": {
     "argon_repository": "jerrykuku/luci-theme-argon",
@@ -15,6 +15,6 @@
     "kernel_repository": "ophub/kernel",
     "kernel_release_tag": "kernel_stable",
     "kernel_series": "6.12",
-    "kernel_version": "6.12.94"
+    "kernel_version": "6.12.112"
   }
 }
