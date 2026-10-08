@@ -28,6 +28,12 @@ class ShellContractTests(unittest.TestCase):
         self.assertNotIn("ophub/kernel", texts)
         self.assertIn("FINE3399_KERNEL_BUNDLE", texts)
 
+    def test_imagebuilder_local_apk_repository_uses_file_uri(self):
+        script = (ROOT / "scripts/build-rootfs.sh").read_text(encoding="utf-8")
+
+        self.assertIn("--repository file://$(PACKAGE_DIR)/packages.adb", script)
+        self.assertIn("ImageBuilder local APK repository path is not supported.", script)
+
     def test_workflow_verifies_before_upload(self):
         workflow = (ROOT / ".github/workflows/build-fine3399.yml").read_text(encoding="utf-8")
         self.assertNotIn("continue-on-error", workflow)

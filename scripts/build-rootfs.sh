@@ -35,6 +35,16 @@ fi
 mkdir -p "$tree"
 tar --zstd -xf "$archive" --strip-components=1 -C "$tree"
 touch "$tree/.fine3399-imagebuilder-tree"
+# ImmortalWrt 25.12.2's ImageBuilder uses a relative local APK repository
+# path. Current apk-tools requires an explicit file:// URI to resolve local
+# packages (including the downloaded Argon release assets).
+if grep -Fq -- '--repository $(PACKAGE_DIR)/packages.adb' "$tree/Makefile"; then
+	sed -i 's|--repository \$(PACKAGE_DIR)/packages.adb|--repository file://$(PACKAGE_DIR)/packages.adb|' "$tree/Makefile"
+fi
+grep -Fq -- '--repository file://$(PACKAGE_DIR)/packages.adb' "$tree/Makefile" || {
+	echo "ImageBuilder local APK repository path is not supported." >&2
+	exit 2
+}
 mkdir -p dl/imagebuilder
 rm -rf "$tree/dl"
 ln -s "$repo_dir/dl/imagebuilder" "$tree/dl"
