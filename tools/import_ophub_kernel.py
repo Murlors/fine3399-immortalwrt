@@ -12,7 +12,9 @@ import shutil
 import sys
 import tarfile
 import tempfile
-from pathlib import Path, PurePosixPath
+from pathlib import Path
+
+from tools.archive_paths import safe_member_path
 
 
 REQUIRED_MODULES = (
@@ -50,18 +52,11 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def safe_name(name: str) -> PurePosixPath:
-    path = PurePosixPath(name)
-    if path.is_absolute() or ".." in path.parts:
-        raise ImportError(f"unsafe archive member: {name}")
-    return path
-
-
 def nested_archives(outer: Path) -> dict[str, bytes]:
     result: dict[str, bytes] = {}
     with tarfile.open(outer, "r:gz") as archive:
         for member in archive.getmembers():
-            path = safe_name(member.name)
+            path = safe_member_path(member.name)
             if member.isfile() and path.name.endswith(".tar.gz"):
                 stream = archive.extractfile(member)
                 if stream:
@@ -76,7 +71,7 @@ def replace_dtb(archive_data: bytes, dtb: bytes) -> bytes:
         with gzip.GzipFile(filename="", mode="wb", fileobj=output, mtime=0) as compressed:
             with tarfile.open(fileobj=compressed, mode="w", format=tarfile.PAX_FORMAT) as target:
                 for member in source.getmembers():
-                    path = safe_name(member.name)
+                    path = safe_member_path(member.name)
                     info = tarfile.TarInfo(member.name)
                     info.mode = member.mode
                     info.type = member.type
@@ -110,7 +105,7 @@ def add_module(archive_data: bytes, destination: str, module: bytes) -> bytes:
         with gzip.GzipFile(filename="", mode="wb", fileobj=output, mtime=0) as compressed:
             with tarfile.open(fileobj=compressed, mode="w", format=tarfile.PAX_FORMAT) as target:
                 for member in source.getmembers():
-                    safe_name(member.name)
+                    safe_member_path(member.name)
                     found += int(member.name.lstrip("./") == destination)
                     info = tarfile.TarInfo(member.name)
                     info.mode = member.mode
@@ -165,7 +160,11 @@ def import_bundle(
     )
 
     with tarfile.open(fileobj=io.BytesIO(archives[modules_name]), mode="r:gz") as modules:
-        names = {safe_name(member.name).as_posix() for member in modules.getmembers() if member.isfile()}
+        names = {
+            safe_member_path(member.name).as_posix()
+            for member in modules.getmembers()
+            if member.isfile()
+        }
     required_modules = (*REQUIRED_MODULES, CUSTOM_MODULE_NAME)
     missing = [suffix for suffix in required_modules if not any(name.endswith(suffix) for name in names)]
     if missing:

@@ -9,25 +9,20 @@ import shutil
 import sys
 import tarfile
 import tempfile
-from pathlib import Path, PurePosixPath
+from pathlib import Path
+
+from tools.archive_paths import safe_member_path
 
 
 class ExtractError(RuntimeError):
     pass
 
 
-def safe_name(name: str) -> PurePosixPath:
-    path = PurePosixPath(name)
-    if path.is_absolute() or ".." in path.parts:
-        raise ExtractError(f"unsafe archive member: {name}")
-    return path
-
-
 def extract_headers(kernel: Path, output: Path) -> None:
     candidates: list[bytes] = []
     with tarfile.open(kernel, "r:gz") as outer:
         for member in outer.getmembers():
-            path = safe_name(member.name)
+            path = safe_member_path(member.name)
             if member.isfile() and path.name.startswith("header-") and path.name.endswith(".tar.gz"):
                 stream = outer.extractfile(member)
                 if stream:
@@ -40,7 +35,7 @@ def extract_headers(kernel: Path, output: Path) -> None:
     try:
         with tarfile.open(fileobj=io.BytesIO(candidates[0]), mode="r:gz") as headers:
             for member in headers.getmembers():
-                safe_name(member.name)
+                safe_member_path(member.name)
             headers.extractall(staging, filter="data")
         required = ("Makefile", "Module.symvers", "include/config/kernel.release")
         missing = [name for name in required if not (staging / name).is_file()]
@@ -64,7 +59,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         extract_headers(args.kernel, args.output)
-    except (ExtractError, OSError, tarfile.TarError) as error:
+    except (ExtractError, OSError, tarfile.TarError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
     return 0
