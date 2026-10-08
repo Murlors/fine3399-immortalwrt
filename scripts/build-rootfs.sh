@@ -72,6 +72,10 @@ while IFS= read -r asset; do
 	[ -s "dl/releases/$asset" ] || { echo "Missing downloaded asset: $asset" >&2; exit 2; }
 	cp "dl/releases/$asset" "$tree/packages/"
 done <build/third-party-assets.txt
+python3 tools/normalize_apk_filenames.py \
+	--apk-tool "$tree/staging_dir/host/bin/apk" \
+	--packages-dir "$tree/packages" \
+	--assets-file build/third-party-assets.txt
 
 overlay=build/imagebuilder-files
 overlay_marker=build/.fine3399-imagebuilder-files

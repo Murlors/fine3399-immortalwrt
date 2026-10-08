@@ -33,6 +33,7 @@ class ShellContractTests(unittest.TestCase):
 
         self.assertIn("--repository file://$(PACKAGE_DIR)/packages.adb", script)
         self.assertIn("ImageBuilder local APK repository path is not supported.", script)
+        self.assertIn("tools/normalize_apk_filenames.py", script)
 
     def test_workflow_verifies_before_upload(self):
         workflow = (ROOT / ".github/workflows/build-fine3399.yml").read_text(encoding="utf-8")
