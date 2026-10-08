@@ -14,7 +14,10 @@ import tarfile
 import tempfile
 from pathlib import Path
 
-from tools.archive_paths import safe_member_path
+if __package__:
+    from .archive_paths import safe_member_path
+else:
+    from archive_paths import safe_member_path
 
 
 REQUIRED_MODULES = (
