@@ -92,6 +92,13 @@ nlbwmon
 luci-app-nlbwmon
 
 # LCD and diagnostics
+# Required by the ophub cpustat SSH/login status banner (Perl core is split).
+perl
+perlbase-base
+perlbase-utf8
+perlbase-time
+perlbase-xsloader
+perlbase-file
 ethtool
 iperf3
 tcpdump
